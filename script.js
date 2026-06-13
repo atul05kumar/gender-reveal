@@ -7,9 +7,6 @@ const SECRET_PIN_HASH =
 // BOY or GIRL
 const BABY_GENDER = "BOY";
 
-// BOY or GIRL
-const BABY_GENDER = "BOY";
-
 async function checkPin() {
   const enteredPin = document.getElementById("pinInput").value;
 
