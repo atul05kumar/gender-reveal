@@ -1,7 +1,8 @@
 // CONFIGURATION
 
 // SHA-256 hash of your secret PIN
-const SECRET_PIN_HASH = "PUT_HASH_HERE";
+const SECRET_PIN_HASH =
+  "01f0a55c866eeb79adee1aa0b130e2a6da664a7b912a6cab70d560649a0caa7b";
 
 // BOY or GIRL
 const BABY_GENDER = "BOY";
