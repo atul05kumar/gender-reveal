@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Baby Gender Reveal</title>
+
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>👶 Baby Reveal Time 👶</h1>
+
+      <p class="subtitle">Enter the secret PIN to discover the baby's gender</p>
+
+      <div id="pin-section">
+        <input type="password" id="pinInput" placeholder="Enter PIN" />
+
+        <button onclick="checkPin()">Reveal</button>
+
+        <div id="error"></div>
+      </div>
+
+      <div id="revealSection" class="hidden">
+        <div id="genderEmoji"></div>
+
+        <h1 id="genderText"></h1>
+      </div>
+    </div>
+
+    <div id="balloonContainer"></div>
+
+    <audio id="revealMusic">
+      <source src="music.mp3" type="audio/mpeg" />
+    </audio>
+
+    <script src="script.js"></script>
+  </body>
+</html>

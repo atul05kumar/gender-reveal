@@ -1,0 +1,95 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+
+  background: linear-gradient(135deg, #fef9ff, #eef7ff);
+
+  height: 100vh;
+}
+
+.container {
+  text-align: center;
+  padding-top: 100px;
+  position: relative;
+  z-index: 5;
+}
+
+h1 {
+  font-size: 3rem;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+}
+
+input {
+  padding: 12px;
+  font-size: 18px;
+  width: 220px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 12px 20px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+.hidden {
+  display: none;
+}
+
+#error {
+  margin-top: 15px;
+  color: red;
+}
+
+#genderText {
+  font-size: 5rem;
+  animation: pulse 1.5s infinite;
+}
+
+#genderEmoji {
+  font-size: 8rem;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.balloon {
+  position: absolute;
+  bottom: -150px;
+  font-size: 60px;
+
+  animation-name: floatUp;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes floatUp {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-120vh);
+  }
+}
