@@ -696,7 +696,10 @@ function replayReveal() {
    PRE-REVEAL COUNTDOWN BANNER  (counts down to 8:30 PM local)
 ══════════════════════════════════════════════════════ */
 
+let _bannerOverridden = false;
+
 function overrideTimer() {
+  _bannerOverridden = true;
   document.getElementById('reveal-banner').classList.add('hidden');
   document.getElementById('btn-start').disabled = false;
 }
@@ -707,6 +710,9 @@ function initBanner() {
   const btnStart = document.getElementById('btn-start');
 
   function tick() {
+    /* Stop loop if manually overridden */
+    if (_bannerOverridden) return;
+
     const now    = new Date();
     const target = new Date();
     target.setHours(20, 30, 0, 0);   // 8:30 PM local time today
