@@ -120,12 +120,6 @@ const S = {
   collected:     [],       // digits earned so far
   answerHashes:  [],       // SHA-256 of each answer (pre-computed at init)
   masterKeyHash: '',       // SHA-256 of the full master key
-  audioCtx:      null,
-  masterGain:    null,
-  bgRunning:     false,
-  bgTimeout:     null,
-  bgNoteIdx:     0,
-  musicOn:       true,
 };
 
 /* ── SHA-256 via SubtleCrypto ──────────────────────── */
@@ -135,308 +129,6 @@ async function sha256(str) {
   return Array.from(new Uint8Array(hash))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
-}
-
-/* ══════════════════════════════════════════════════════
-   AUDIO ENGINE
-══════════════════════════════════════════════════════ */
-
-function getACtx() {
-  if (!S.audioCtx) {
-    S.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (S.audioCtx.state === 'suspended') S.audioCtx.resume();
-  return S.audioCtx;
-}
-
-function getMGain() {
-  if (!S.masterGain) {
-    const ctx    = getACtx();
-    S.masterGain = ctx.createGain();
-    S.masterGain.gain.value = 1;
-    S.masterGain.connect(ctx.destination);
-  }
-  return S.masterGain;
-}
-
-/* Build an impulse-response reverb tail */
-function makeReverb(ctx, seconds = 2.0) {
-  const conv = ctx.createConvolver();
-  const len  = Math.floor(ctx.sampleRate * seconds);
-  const ir   = ctx.createBuffer(2, len, ctx.sampleRate);
-  for (let c = 0; c < 2; c++) {
-    const d = ir.getChannelData(c);
-    for (let i = 0; i < len; i++) {
-      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
-    }
-  }
-  conv.buffer = ir;
-  return conv;
-}
-
-/* ── Background Music ──────────────────────────────── */
-/* Pentatonic lullaby (C major pentatonic, two octaves) */
-const BG_MELODY = [523.25, 659.25, 783.99, 880.00, 1046.50,
-                   880.00, 783.99, 659.25, 523.25, 440.00,
-                   392.00, 440.00, 523.25, 659.25];
-const BG_HARM   = [392.00, 493.88, 587.33, 659.25, 783.99,
-                   659.25, 587.33, 493.88, 392.00, 329.63,
-                   293.66, 329.63, 392.00, 493.88];
-
-let _bgReverb = null;
-
-function startBgMusic() {
-  if (S.bgRunning) return;
-  S.bgRunning = true;
-  tickBg();
-}
-
-function stopBgMusic() {
-  S.bgRunning = false;
-  if (S.bgTimeout) { clearTimeout(S.bgTimeout); S.bgTimeout = null; }
-}
-
-function tickBg() {
-  if (!S.bgRunning || !S.musicOn) return;
-
-  const ctx = getACtx();
-  const mg  = getMGain();
-  if (!_bgReverb) _bgReverb = makeReverb(ctx, 2.2);
-
-  const playNote = (freq, vol, now) => {
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const rvbG = ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(vol, now + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
-
-    rvbG.gain.value = 0.28;
-
-    osc.connect(gain);
-    gain.connect(mg);
-    gain.connect(_bgReverb);
-    _bgReverb.connect(rvbG);
-    rvbG.connect(mg);
-
-    osc.start(now);
-    osc.stop(now + 0.85);
-  };
-
-  const i   = S.bgNoteIdx % BG_MELODY.length;
-  const now = ctx.currentTime;
-  playNote(BG_MELODY[i], 0.10, now);
-
-  /* Occasional harmony note */
-  if (i % 2 === 0) playNote(BG_HARM[i], 0.042, now + 0.19);
-
-  S.bgNoteIdx++;
-  S.bgTimeout = setTimeout(tickBg, 380);
-}
-
-/* ── Drumroll ──────────────────────────────────────── */
-function playDrumroll(durationSec) {
-  const ctx = getACtx();
-  const mg  = getMGain();
-
-  /* White-noise buffer for snare hits */
-  const snareLen = Math.floor(ctx.sampleRate * 0.065);
-  const snareBuf = ctx.createBuffer(1, snareLen, ctx.sampleRate);
-  const sd       = snareBuf.getChannelData(0);
-  for (let i = 0; i < snareLen; i++) sd[i] = Math.random() * 2 - 1;
-
-  let hitTime  = ctx.currentTime + 0.05;
-  const endAt  = hitTime + durationSec - 0.35;
-  let interval = 0.22;
-
-  const sched = () => {
-    const horizon = ctx.currentTime + 0.4;
-    while (hitTime <= horizon && hitTime <= endAt) {
-      const src     = ctx.createBufferSource();
-      const flt     = ctx.createBiquadFilter();
-      const hitGain = ctx.createGain();
-
-      src.buffer         = snareBuf;
-      flt.type           = 'bandpass';
-      flt.frequency.value = 2800 + Math.random() * 600;
-      flt.Q.value        = 0.7;
-
-      /* Gradually louder as roll accelerates */
-      const progress = (hitTime - (ctx.currentTime + 0.05)) / durationSec;
-      const vol = 0.12 + progress * 0.3;
-      hitGain.gain.setValueAtTime(Math.min(vol, 0.42), hitTime);
-      hitGain.gain.exponentialRampToValueAtTime(0.0001, hitTime + interval * 0.55);
-
-      src.connect(flt);
-      flt.connect(hitGain);
-      hitGain.connect(mg);
-      src.start(hitTime);
-      src.stop(hitTime + interval * 0.65);
-
-      hitTime  += interval;
-      interval  = Math.max(0.022, interval * 0.953); // accelerate
-    }
-
-    if (hitTime <= endAt) {
-      setTimeout(sched, 220);
-    } else {
-      /* Final crash cymbal */
-      playCrash(ctx, mg, endAt + 0.08);
-    }
-  };
-
-  sched();
-}
-
-function playCrash(ctx, mg, at) {
-  const len = Math.floor(ctx.sampleRate * 1.4);
-  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-  const d   = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-
-  const src = ctx.createBufferSource();
-  const flt = ctx.createBiquadFilter();
-  const g   = ctx.createGain();
-
-  src.buffer          = buf;
-  flt.type            = 'highpass';
-  flt.frequency.value = 4500;
-  g.gain.setValueAtTime(0.65, at);
-  g.gain.exponentialRampToValueAtTime(0.0001, at + 1.4);
-
-  src.connect(flt);
-  flt.connect(g);
-  g.connect(mg);
-  src.start(at);
-  src.stop(at + 1.45);
-}
-
-/* ── Celebration Fanfare + Loop ────────────────────── */
-function playCelebration() {
-  const ctx   = getACtx();
-  const mg    = getMGain();
-  const isGrl = CONFIG.gender === 'girl';
-  const root  = isGrl ? 293.66 : 261.63; // D4 for girl, C4 for boy
-
-  const rv  = makeReverb(ctx, 2.8);
-  const rvG = ctx.createGain();
-  rvG.gain.value = 0.32;
-  rv.connect(rvG);
-  rvG.connect(mg);
-
-  /* Fanfare motif */
-  const fanfare = [
-    { f: root,        t: 0.00, dur: 0.18 },
-    { f: root,        t: 0.13, dur: 0.18 },
-    { f: root * 1.25, t: 0.28, dur: 0.26 },
-    { f: root * 1.5,  t: 0.52, dur: 0.32 },
-    { f: root * 2,    t: 0.82, dur: 1.30 },
-  ];
-
-  const now = ctx.currentTime;
-
-  fanfare.forEach(n => {
-    /* Main (sawtooth) */
-    playFanfareNote(ctx, mg, rv, 'sawtooth', n.f,       0.14, now + n.t, n.dur);
-    /* Octave sine */
-    playFanfareNote(ctx, mg, rv, 'sine',     n.f * 2,   0.06, now + n.t, n.dur);
-    /* 5th harmony */
-    playFanfareNote(ctx, mg, rv, 'sine',     n.f * 1.5, 0.05, now + n.t, n.dur);
-  });
-
-  /* Looping celebration arpeggio starts after fanfare */
-  setTimeout(() => startCelebLoop(ctx, mg, rv, root), 2200);
-}
-
-function playFanfareNote(ctx, mg, rv, type, freq, vol, start, dur) {
-  const osc = ctx.createOscillator();
-  const g   = ctx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  g.gain.setValueAtTime(0, start);
-  g.gain.linearRampToValueAtTime(vol, start + 0.03);
-  g.gain.exponentialRampToValueAtTime(0.0001, start + dur + 0.08);
-  osc.connect(g);
-  g.connect(mg);
-  g.connect(rv);
-  osc.start(start);
-  osc.stop(start + dur + 0.12);
-}
-
-function startCelebLoop(ctx, mg, rv, root) {
-  const scale = [1, 1.125, 1.25, 1.5, 1.667, 2, 2.25, 2.5]
-    .map(r => root * r);
-  let idx  = 0;
-  let live = true;
-
-  /* Expose stopper on state for potential cleanup */
-  S._celebStop = () => { live = false; };
-
-  const loop = () => {
-    if (!live) return;
-    const octave = (Math.floor(idx / scale.length) % 2 === 1) ? 2 : 1;
-    const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = scale[idx % scale.length] * octave;
-    const t = ctx.currentTime;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.08, t + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
-    osc.connect(g);
-    g.connect(mg);
-    g.connect(rv);
-    osc.start(t);
-    osc.stop(t + 0.42);
-    idx++;
-    setTimeout(loop, 175);
-  };
-
-  loop();
-}
-
-/* ── Sound FX ──────────────────────────────────────── */
-function sfxCorrect() {
-  if (!S.musicOn) return;
-  const ctx = getACtx();
-  const mg  = getMGain();
-  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
-    const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = f;
-    const t = ctx.currentTime + i * 0.09;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.14, t + 0.025);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
-    osc.connect(g);
-    g.connect(mg);
-    osc.start(t);
-    osc.stop(t + 0.42);
-  });
-}
-
-function sfxWrong() {
-  if (!S.musicOn) return;
-  try {
-    const ctx = getACtx();
-    const mg  = getMGain();
-    const osc = ctx.createOscillator();
-    const g   = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(240, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.38);
-    g.gain.setValueAtTime(0.1, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
-    osc.connect(g);
-    g.connect(mg);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.44);
-  } catch (_) { /* silently ignore */ }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -667,7 +359,6 @@ function wireEvents() {
   document.getElementById('btn-submit').addEventListener('click', submitAnswer);
   document.getElementById('btn-next')  .addEventListener('click', nextQ);
   document.getElementById('btn-unlock').addEventListener('click', submitKey);
-  document.getElementById('music-btn') .addEventListener('click', toggleMusic);
 
   /* Enter key does nothing anywhere — all buttons must be mouse-clicked */
   document.getElementById('answer-input').addEventListener('keydown', e => {
@@ -696,8 +387,6 @@ function wireEvents() {
 ══════════════════════════════════════════════════════ */
 
 function startQuiz() {
-  getACtx();          // must be called from a user gesture to unlock audio
-  startBgMusic();
   S.currentQ = 0;
   loadQ(0);
   goTo('s-quiz');
@@ -765,7 +454,6 @@ async function submitAnswer() {
 
     goTo('s-reward');
     setTimeout(() => slotMachine(document.getElementById('slot-digit'), q.rewardDigit), 450);
-    setTimeout(sfxCorrect, 320);
 
   } else {
     /* ✘ Wrong */
@@ -773,7 +461,6 @@ async function submitAnswer() {
       "That's not quite right — give it another try! 💭";
     inp.classList.add('shake');
     setTimeout(() => { inp.classList.remove('shake'); inp.select(); }, 440);
-    sfxWrong();
   }
 }
 
@@ -814,7 +501,6 @@ async function submitKey() {
 
   if (hash === S.masterKeyHash) {
     /* Correct key → drumroll */
-    stopBgMusic();
     goTo('s-drumroll');
     setTimeout(startCountdown, 700);
   } else {
@@ -822,7 +508,6 @@ async function submitKey() {
       '🔒 Incorrect key — check the digits you collected and try again!';
     inp.classList.add('shake');
     setTimeout(() => { inp.classList.remove('shake'); inp.value = ''; }, 460);
-    sfxWrong();
   }
 }
 
@@ -852,9 +537,6 @@ function startCountdown() {
 
   ring.style.strokeDasharray  = CIRCUMFERENCE;
   ring.style.strokeDashoffset = 0;
-
-  /* Start audio drumroll */
-  playDrumroll(10);
 
   let t = 10;
 
@@ -919,7 +601,6 @@ function doReveal() {
 
   /* Fire celebration after screen lands */
   setTimeout(() => {
-    playCelebration();
     startConfettiRain();
   }, 550);
 }
@@ -931,7 +612,6 @@ function doReveal() {
 function replayReveal() {
   /* Stop confetti */
   if (cfRainTimer) { clearInterval(cfRainTimer); cfRainTimer = null; }
-  if (S._celebStop) { S._celebStop(); S._celebStop = null; }
   particles = [];
   ctx2.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -967,22 +647,6 @@ function replayReveal() {
   S.bgNoteIdx = 0;
 
   goTo('s-landing');
-}
-
-/* ══════════════════════════════════════════════════════
-   MUSIC TOGGLE
-══════════════════════════════════════════════════════ */
-
-function toggleMusic() {
-  S.musicOn = !S.musicOn;
-  document.getElementById('music-btn').textContent = S.musicOn ? '🔊' : '🔇';
-
-  if (S.masterGain) {
-    const ctx = getACtx();
-    S.masterGain.gain.setTargetAtTime(S.musicOn ? 1 : 0, ctx.currentTime, 0.1);
-  }
-
-  if (S.musicOn && !S.bgRunning) startBgMusic();
 }
 
 /* ══════════════════════════════════════════════════════

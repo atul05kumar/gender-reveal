@@ -90,25 +90,6 @@ body {
   z-index: 200;
 }
 
-/* ── Music Button ──────────────────────────────────── */
-.music-btn {
-  position: fixed;
-  top: 20px; right: 20px;
-  width: 48px; height: 48px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-bdr);
-  border-radius: 50%;
-  font-size: 1.3rem;
-  cursor: pointer;
-  display: grid; place-items: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: transform 0.2s, background 0.2s;
-  z-index: 300;
-  color: #fff;
-}
-.music-btn:hover { transform: scale(1.12); background: rgba(255,255,255,0.15); }
-
 /* ── Screen System ─────────────────────────────────── */
 .screen {
   position: fixed; top: 0; right: 0; bottom: 0; left: 0;
