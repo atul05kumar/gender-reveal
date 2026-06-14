@@ -401,7 +401,18 @@ function wireEvents() {
 
 function startQuiz() {
   S.currentQ = 0;
-  playBg();
+
+  /* Unlock both audio elements on the first user gesture.
+     Browsers (especially on HTTPS/GitHub Pages) block audio that
+     plays outside a direct user-interaction call stack.
+     Touching both elements here "unlocks" them so later .play()
+     calls inside setTimeout chains also work. */
+  bgAudio.play().catch(() => {});
+  drumrollAudio.play().then(() => {
+    drumrollAudio.pause();
+    drumrollAudio.currentTime = 0;
+  }).catch(() => {});
+
   loadQ(0);
   goTo('s-quiz');
 }
