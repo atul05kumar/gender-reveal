@@ -10,14 +10,14 @@ const CONFIG = {
 
   /* ── Reveal ──────────────────────────────────────
    * Set to 'girl' or 'boy'                          */
-  gender: 'girl',
+  gender: 'boy',
 
   /* Optional baby name shown on the reveal screen.
    * Leave as '' if you're not announcing the name.  */
   babyName: '',
 
   /* Your names, shown on the reveal screen.         */
-  parents: 'Mom & Dad',
+  parents: 'Devina & Atul',
 
   /* ── Questions ──────────────────────────────────
    *
@@ -103,7 +103,7 @@ const CONFIG = {
       question:    'Before learning to walk, talk, or even be born, our baby apparently decided to help with our social media bios — they tried their best but left a spelling mistake. One word in our social media bio is misspelled by our tiniest editor. What is the word?',
       hint:        'Well, keep your eyes and our profiles open!',
       answer:      'devlovement',
-      rewardDigit: '2',
+      rewardDigit: '6',
       rewardMsg:   'All digits collected — you\'ve cracked the code! Final digit unlocked!'
     },
   ]
