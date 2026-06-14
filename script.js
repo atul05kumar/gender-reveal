@@ -693,7 +693,47 @@ function replayReveal() {
 }
 
 /* ══════════════════════════════════════════════════════
+   PRE-REVEAL COUNTDOWN BANNER  (counts down to 8:30 PM local)
+══════════════════════════════════════════════════════ */
+
+function initBanner() {
+  const banner   = document.getElementById('reveal-banner');
+  const textEl   = document.getElementById('banner-text');
+
+  function tick() {
+    const now    = new Date();
+    const target = new Date();
+    target.setHours(20, 30, 0, 0);   // 8:30 PM local time today
+
+    const diff = target - now;
+
+    if (diff <= 0) {
+      /* Time has arrived — hide the banner */
+      banner.classList.add('hidden');
+      return;
+    }
+
+    const hours = Math.floor(diff / 3600000);
+    const mins  = Math.floor((diff % 3600000) / 60000);
+
+    if (hours > 0) {
+      textEl.textContent =
+        `Hold your Horses! Gender Reveal will begin in ${hours} hour${hours !== 1 ? 's' : ''} and ${mins} min${mins !== 1 ? 's' : ''}`;
+    } else {
+      textEl.textContent =
+        `Hold your Horses! Gender Reveal will begin in ${mins} min${mins !== 1 ? 's' : ''}`;
+    }
+
+    /* Refresh every 30 seconds */
+    setTimeout(tick, 30000);
+  }
+
+  tick();
+}
+
+/* ══════════════════════════════════════════════════════
    BOOT
 ══════════════════════════════════════════════════════ */
 
 init().catch(console.error);
+initBanner();
