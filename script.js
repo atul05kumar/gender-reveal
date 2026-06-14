@@ -227,7 +227,24 @@ function cfTick() {
     ctx2.restore();
   }
 
-  cfRAF = particles.length ? requestAnimationFrame(cfTick) : null;
+  /* Draw balloons in the same frame */
+  balloons = balloons.filter(b => b.op > 0.02);
+  for (const b of balloons) {
+    b.sway += b.swaySpeed;
+    b.x    += b.vx + Math.sin(b.sway) * 0.9;
+    b.y    += b.vy;
+    if (b.y < -80) b.op -= 0.04;
+
+    ctx2.save();
+    ctx2.globalAlpha = b.op;
+    ctx2.font        = `${b.size}px serif`;
+    ctx2.textAlign   = 'center';
+    ctx2.textBaseline = 'middle';
+    ctx2.fillText(b.emoji, b.x, b.y);
+    ctx2.restore();
+  }
+
+  cfRAF = (particles.length || balloons.length) ? requestAnimationFrame(cfTick) : null;
 }
 
 function drawStar(c, outerR, innerR, spikes = 5) {
@@ -249,6 +266,40 @@ function startConfettiRain() {
   spawnParticles(380, true);                           // big center burst
   cfRainTimer = setInterval(() => spawnParticles(65), 850);
   setTimeout(() => clearInterval(cfRainTimer), 30000);
+}
+
+/* ── Balloons ───────────────────────────────────────── */
+const BALLOON_EMOJIS = CONFIG.gender === 'girl'
+  ? ['🎀','🩷','💕','🌸','🩰']
+  : ['💙','🩵','⭐','🌟','🎊'];
+
+let balloons     = [];
+let balloonTimer = null;
+
+function spawnBalloon() {
+  balloons.push({
+    x:         Math.random() * window.innerWidth,
+    y:         window.innerHeight + 60,
+    vx:        (Math.random() - 0.5) * 1.8,
+    vy:        -(2.2 + Math.random() * 2.2),
+    size:      28 + Math.random() * 28,
+    sway:      Math.random() * Math.PI * 2,
+    swaySpeed: 0.022 + Math.random() * 0.018,
+    emoji:     BALLOON_EMOJIS[Math.floor(Math.random() * BALLOON_EMOJIS.length)],
+    op:        1,
+  });
+  /* Ensure the shared cfTick RAF is running */
+  if (!cfRAF) cfRAF = requestAnimationFrame(cfTick);
+}
+
+function startBalloons() {
+  /* Initial burst — stagger 20 balloons over 2 s */
+  for (let i = 0; i < 20; i++) {
+    setTimeout(spawnBalloon, i * 100);
+  }
+  /* Keep launching every 400 ms for 25 s */
+  balloonTimer = setInterval(spawnBalloon, 400);
+  setTimeout(() => clearInterval(balloonTimer), 25000);
 }
 
 /* ══════════════════════════════════════════════════════
@@ -572,7 +623,7 @@ function startCountdown() {
   setTimeout(() => {
     drumrollAudio.currentTime = 0;
     drumrollAudio.play().catch(() => {});
-  }, 3000);
+  }, 5000);
 
   let t = 10;
 
@@ -640,7 +691,9 @@ function doReveal() {
     stopDrumroll();
     bgAudio.currentTime = 0;
     playBg();
-    startConfettiRain();
+    startConfettiRain();           // continuous rain + initial burst
+    spawnParticles(600, true);     // extra-large centre blast on reveal
+    startBalloons();               // balloons rising from bottom
   }, 550);
 }
 
@@ -649,9 +702,11 @@ function doReveal() {
 ══════════════════════════════════════════════════════ */
 
 function replayReveal() {
-  /* Stop confetti */
-  if (cfRainTimer) { clearInterval(cfRainTimer); cfRainTimer = null; }
+  /* Stop confetti + balloons */
+  if (cfRainTimer)    { clearInterval(cfRainTimer);    cfRainTimer    = null; }
+  if (balloonTimer)   { clearInterval(balloonTimer);   balloonTimer   = null; }
   particles = [];
+  balloons  = [];
   ctx2.clearRect(0, 0, canvas.width, canvas.height);
 
   /* Reset background */
