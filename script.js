@@ -696,6 +696,11 @@ function replayReveal() {
    PRE-REVEAL COUNTDOWN BANNER  (counts down to 8:30 PM local)
 ══════════════════════════════════════════════════════ */
 
+function overrideTimer() {
+  document.getElementById('reveal-banner').classList.add('hidden');
+  document.getElementById('btn-start').disabled = false;
+}
+
 function initBanner() {
   const banner  = document.getElementById('reveal-banner');
   const textEl  = document.getElementById('banner-text');

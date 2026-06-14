@@ -90,6 +90,18 @@ body {
   z-index: 200;
 }
 
+/* ── Hidden Timer Override Button ─────────────────── */
+#timer-override {
+  position: fixed;
+  bottom: 0; right: 0;
+  width: 60px; height: 60px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 9999;
+  opacity: 0;
+}
+
 /* ── Pre-reveal Countdown Banner ──────────────────── */
 .reveal-banner {
   position: fixed;
