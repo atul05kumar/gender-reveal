@@ -688,12 +688,24 @@ function doReveal() {
 
   /* Fire celebration after screen lands */
   setTimeout(() => {
-    stopDrumroll();
-    bgAudio.currentTime = 0;
-    playBg();
     startConfettiRain();           // continuous rain + initial burst
     spawnParticles(600, true);     // extra-large centre blast on reveal
     startBalloons();               // balloons rising from bottom
+
+    /* Let drumroll finish naturally, then start background music */
+    const startBgAfterDrumroll = () => {
+      bgAudio.currentTime = 0;
+      playBg();
+      drumrollAudio.removeEventListener('ended', startBgAfterDrumroll);
+    };
+
+    if (drumrollAudio.ended || drumrollAudio.paused) {
+      /* Drumroll already finished or wasn't playing */
+      bgAudio.currentTime = 0;
+      playBg();
+    } else {
+      drumrollAudio.addEventListener('ended', startBgAfterDrumroll);
+    }
   }, 550);
 }
 
