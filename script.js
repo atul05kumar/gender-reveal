@@ -569,8 +569,10 @@ function startCountdown() {
   ring.style.strokeDasharray  = CIRCUMFERENCE;
   ring.style.strokeDashoffset = 0;
 
-  drumrollAudio.currentTime = 0;
-  drumrollAudio.play().catch(() => {});
+  setTimeout(() => {
+    drumrollAudio.currentTime = 0;
+    drumrollAudio.play().catch(() => {});
+  }, 3000);
 
   let t = 10;
 
