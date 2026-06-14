@@ -122,6 +122,19 @@ const S = {
   masterKeyHash: '',       // SHA-256 of the full master key
 };
 
+/* ── Audio ─────────────────────────────────────────── */
+const bgAudio       = new Audio('assets/gender-reveal-background.mp3');
+bgAudio.loop        = true;
+bgAudio.volume      = 0.6;
+
+const drumrollAudio = new Audio('assets/drumroll.mp3');
+drumrollAudio.loop  = false;
+drumrollAudio.volume = 0.9;
+
+function playBg()       { bgAudio.play().catch(() => {}); }
+function pauseBg()      { bgAudio.pause(); }
+function stopDrumroll() { drumrollAudio.pause(); drumrollAudio.currentTime = 0; }
+
 /* ── SHA-256 via SubtleCrypto ──────────────────────── */
 async function sha256(str) {
   const buf  = new TextEncoder().encode(str.trim().toLowerCase());
@@ -388,6 +401,7 @@ function wireEvents() {
 
 function startQuiz() {
   S.currentQ = 0;
+  playBg();
   loadQ(0);
   goTo('s-quiz');
 }
@@ -501,6 +515,7 @@ async function submitKey() {
 
   if (hash === S.masterKeyHash) {
     /* Correct key → drumroll */
+    pauseBg();
     goTo('s-drumroll');
     setTimeout(startCountdown, 700);
   } else {
@@ -537,6 +552,9 @@ function startCountdown() {
 
   ring.style.strokeDasharray  = CIRCUMFERENCE;
   ring.style.strokeDashoffset = 0;
+
+  drumrollAudio.currentTime = 0;
+  drumrollAudio.play().catch(() => {});
 
   let t = 10;
 
@@ -601,6 +619,9 @@ function doReveal() {
 
   /* Fire celebration after screen lands */
   setTimeout(() => {
+    stopDrumroll();
+    bgAudio.currentTime = 0;
+    playBg();
     startConfettiRain();
   }, 550);
 }
@@ -641,10 +662,14 @@ function replayReveal() {
   document.getElementById('answer-error').textContent = '';
   document.getElementById('key-error').textContent    = '';
 
+  /* Stop audio */
+  stopDrumroll();
+  pauseBg();
+  bgAudio.currentTime = 0;
+
   /* Reset state */
   S.currentQ  = 0;
   S.collected = [];
-  S.bgNoteIdx = 0;
 
   goTo('s-landing');
 }
