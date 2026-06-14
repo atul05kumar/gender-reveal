@@ -123,11 +123,16 @@ const S = {
 };
 
 /* ── Audio ─────────────────────────────────────────── */
-const bgAudio       = new Audio('assets/gender-reveal-background.mp3');
+/* GitHub Pages blocks audio/video media types (403 MediaTypeBlocked).
+   Files are served via jsDelivr CDN which proxies them from the GitHub
+   repo without the media-type restriction.                             */
+const CDN = 'https://cdn.jsdelivr.net/gh/atul05kumar/gender-reveal@main/assets/';
+
+const bgAudio       = new Audio(CDN + 'gender-reveal-background.mp3');
 bgAudio.loop        = true;
 bgAudio.volume      = 0.6;
 
-const drumrollAudio = new Audio('assets/drumroll.mp3');
+const drumrollAudio = new Audio(CDN + 'drumroll.mp3');
 drumrollAudio.loop  = false;
 drumrollAudio.volume = 0.9;
 
