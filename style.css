@@ -448,18 +448,21 @@ p { color: var(--w75); line-height: 1.7; margin-bottom: 20px; }
 .key-digits {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 5px;
   margin-bottom: 26px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .k-digit {
-  width: 42px; height: 52px;
+  flex: 1;
+  min-width: 0;
+  max-width: 48px;
+  height: 52px;
   background: rgba(251,191,36,0.15);
   border: 2px solid rgba(251,191,36,0.45);
   border-radius: 10px;
   display: grid; place-items: center;
-  font-size: 1.5rem;
+  font-size: clamp(0.9rem, 3vw, 1.5rem);
   font-weight: 700;
   color: #fff;
   box-shadow: 0 0 18px rgba(251,191,36,0.18);
@@ -625,7 +628,7 @@ p { color: var(--w75); line-height: 1.7; margin-bottom: 20px; }
 /* ── Responsive ────────────────────────────────────── */
 @media (max-width: 480px) {
   .card       { padding: 30px 22px; }
-  .k-digit    { width: 34px; height: 44px; font-size: 1.1rem; gap: 5px; }
+  .k-digit    { height: 44px; }
   .countdown-wrap { width: 160px; height: 160px; }
   .countdown-num  { font-size: 3.5rem; }
   .key-input  { font-size: 1.5rem; letter-spacing: 0.3em; }
