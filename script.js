@@ -669,12 +669,17 @@ function wireEvents() {
   document.getElementById('btn-unlock').addEventListener('click', submitKey);
   document.getElementById('music-btn') .addEventListener('click', toggleMusic);
 
-  /* Enter key does nothing — buttons must be clicked */
+  /* Enter key does nothing anywhere — all buttons must be mouse-clicked */
   document.getElementById('answer-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') e.preventDefault();
   });
   document.getElementById('key-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') e.preventDefault();
+  });
+  ['btn-start','btn-submit','btn-next','btn-unlock'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') e.preventDefault();
+    });
   });
 
   /* Clear error messages as user types */
@@ -741,6 +746,11 @@ async function submitAnswer() {
     /* ✔ Correct */
     const q = CONFIG.questions[S.currentQ];
     S.collected.push(q.rewardDigit);
+
+    /* Immediately remove focus + clear the input so Enter on the
+       reward screen cannot re-trigger this handler */
+    inp.blur();
+    inp.value = '';
 
     /* Fill the digit slot */
     const slot = document.getElementById(`ds-${S.currentQ}`);
