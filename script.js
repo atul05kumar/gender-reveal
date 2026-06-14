@@ -697,8 +697,9 @@ function replayReveal() {
 ══════════════════════════════════════════════════════ */
 
 function initBanner() {
-  const banner   = document.getElementById('reveal-banner');
-  const textEl   = document.getElementById('banner-text');
+  const banner  = document.getElementById('reveal-banner');
+  const textEl  = document.getElementById('banner-text');
+  const btnStart = document.getElementById('btn-start');
 
   function tick() {
     const now    = new Date();
@@ -708,24 +709,32 @@ function initBanner() {
     const diff = target - now;
 
     if (diff <= 0) {
-      /* Time has arrived — hide the banner */
+      /* Time has arrived — hide banner and unlock button */
       banner.classList.add('hidden');
+      btnStart.disabled = false;
       return;
     }
 
+    /* Lock the start button until time is up */
+    btnStart.disabled = true;
+
     const hours = Math.floor(diff / 3600000);
     const mins  = Math.floor((diff % 3600000) / 60000);
+    const secs  = Math.floor((diff % 60000) / 1000);
 
-    if (hours > 0) {
-      textEl.textContent =
-        `Hold your Horses! Gender Reveal will begin in ${hours} hour${hours !== 1 ? 's' : ''} and ${mins} min${mins !== 1 ? 's' : ''}`;
-    } else {
-      textEl.textContent =
-        `Hold your Horses! Gender Reveal will begin in ${mins} min${mins !== 1 ? 's' : ''}`;
-    }
+    const hPart = hours > 0
+      ? `${hours} hour${hours !== 1 ? 's' : ''}, `
+      : '';
+    const mPart = (hours > 0 || mins > 0)
+      ? `${mins} min${mins !== 1 ? 's' : ''} and `
+      : '';
+    const sPart = `${secs} sec${secs !== 1 ? 's' : ''}`;
 
-    /* Refresh every 30 seconds */
-    setTimeout(tick, 30000);
+    textEl.textContent =
+      `Hold your Horses! Gender Reveal will begin in ${hPart}${mPart}${sPart}`;
+
+    /* Tick every second */
+    setTimeout(tick, 1000);
   }
 
   tick();
