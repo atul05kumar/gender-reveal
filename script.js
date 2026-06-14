@@ -669,11 +669,12 @@ function wireEvents() {
   document.getElementById('btn-unlock').addEventListener('click', submitKey);
   document.getElementById('music-btn') .addEventListener('click', toggleMusic);
 
+  /* Enter key does nothing — buttons must be clicked */
   document.getElementById('answer-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitAnswer();
+    if (e.key === 'Enter') e.preventDefault();
   });
   document.getElementById('key-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitKey();
+    if (e.key === 'Enter') e.preventDefault();
   });
 
   /* Clear error messages as user types */
